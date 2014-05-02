@@ -6,3 +6,4 @@
 /composer.lock
 /metrics
 html/export
+html/config.php

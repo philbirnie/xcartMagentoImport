@@ -4,35 +4,14 @@ require_once __DIR__.'/../vendor/autoload.php'; // load composer
 require_once __DIR__.'/config.php'; //Local Autoloader
 
 use CSanquer\ColibriCsv\CsvWriter;
-use Importgen\DB;
 use Importgen\Products\Collection\ConfigurableCollection;
+use Importgen\Products\Collection\SimpleCollection;
 
 
 
 /*---------------------------------------------------------------
  * Set up CSV File.
  *--------------------------------------------------------------*/
-
-/**
- * @var $pdo Importgen\DB
- */
-$pdo = DB::get();
-
-/**
- * Base Directory
- * @var $basedir string
- */
-$basedir = __DIR__ . "/export";
-
-/**
- * @var $filename string
- */
-$filename = md5(time() . "product_export") . "_product_export.csv";
-
-/**
- * @var $fullPath string
- */
-$fullPath = $basedir . "/" . $filename;
 
 /**
  * @var $writer CSanquer\ColibriCsv\CsvWriter
@@ -42,29 +21,33 @@ $writer = new CsvWriter(array(
    'enclosing_mode' => 'minimal',
     'trim' => true
 ));
+$writer->open($fullPath);
 
 /**
- * Header Columns
- * @var $header_row array
+ * Write Header Row
  */
-$header_row = array("store","websites","sku","name","weight","special_price","price","categories","qty","is_in_stock","tax_class_id","attribute_set","type","configurable_attributes","visibility","media_gallery","image","small_image","thumbnail","short_description","description","gender","feature","brand","is_featured","shoe_size","color","color_spec","size","inseam","waist_size","hat_size","related_products");
+$writer->writeRow($header_row);
+
 
 /**
  * Configurable Products
  * @var $configurableCollection
  */
-$configurableCollection = new ConfigurableCollection();
-$configurableCollection->generateConfigurableProducts();
+//$configurableCollection = new ConfigurableCollection();
+//$configurableCollection->generateConfigurableProducts();
 
+$simpleCollection = new SimpleCollection();
+$simpleCollection->buildCollection();
 
-//$writer->open($fullPath);
 
 /**
- * Write Header Row
+ * @var $product \Importgen\Products\Simple
  */
-//$writer->writeRow($header_row);
+foreach($simpleCollection->simpleProducts as $product) {
+    $writer->writeRow($product->outputAsArray());
+}
 
-//$writer->close();
+$writer->close();
 
 ?>
 
