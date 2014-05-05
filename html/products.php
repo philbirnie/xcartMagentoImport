@@ -7,6 +7,20 @@ use CSanquer\ColibriCsv\CsvWriter;
 use Importgen\Products\Collection\ConfigurableCollection;
 use Importgen\Products\Collection\SimpleCollection;
 
+?>
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Base Product Generation</title>
+</head>
+<body>
+<h1>Base Product Generation</h1>
+
+
+<?php
+
 
 
 /*---------------------------------------------------------------
@@ -28,24 +42,56 @@ $writer->open($fullPath);
  */
 $writer->writeRow($header_row);
 
+/*---------------------------------------------------------------
+ * Create and output Simple Products
+ *--------------------------------------------------------------*/
 
 /**
- * Configurable Products
- * @var $configurableCollection
+ * @var $simpleCollection SimpleCollection
  */
-//$configurableCollection = new ConfigurableCollection();
-//$configurableCollection->generateConfigurableProducts();
-
 $simpleCollection = new SimpleCollection();
 $simpleCollection->buildCollection();
-
-
 /**
  * @var $product \Importgen\Products\Simple
  */
 foreach($simpleCollection->simpleProducts as $product) {
     $writer->writeRow($product->outputAsArray());
 }
+
+/**
+ * Free Simple Collection from memory.
+ */
+$simpleCollection = null;
+unset($simpleCollection);
+
+/*---------------------------------------------------------------
+ * Create and output Configurable Products
+ *--------------------------------------------------------------*/
+
+/**
+ * Configurable Products
+ * @var $configurableCollection
+ */
+$configurableCollection = new ConfigurableCollection();
+$configurableCollection->generateConfigurableProducts();
+
+/**
+ * @var $product Importgen\Products\Configurable
+ */
+foreach($configurableCollection->configurableProducts as $product) {
+    /**
+     * Write Simple Products to spreadsheet
+     * @var $simple Importgen\Products\Simple
+     */
+    foreach($product->simpleProducts as $simple) {
+        $writer->writeRow($simple->outputAsArray());
+    }
+    /**
+     * Write configurable to row.
+     */
+    $writer->writeRow($product->outputAsArray());
+}
+
 
 $writer->close();
 
@@ -55,13 +101,7 @@ $writer->close();
 
 
 
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Product Export</title>
-</head>
-<body>
+
     <section id="main">
         <header>
             <h1>Export Complete</h1>
