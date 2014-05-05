@@ -42,6 +42,10 @@ class SimpleCollection
     {
     }
 
+    public function __destruct() {
+        $this->simpleProducts = null;
+    }
+
     public function buildCollection()
     {
         $pdo = DB::get();

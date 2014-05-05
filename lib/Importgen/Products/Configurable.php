@@ -148,6 +148,10 @@ class Configurable extends Simple
         $this->type = "configurable";
     }
 
+    public function __destruct() {
+        $this->simpleProducts = null;
+    }
+
     /**
      * Adds Simple Product to this configurable product
      * @param $simpleProduct \Importgen\Products\Simple
@@ -241,6 +245,7 @@ class Configurable extends Simple
             $this->$key = $value;
         }
         //Clear from Memory
+        $tempProduct = null;
         unset($tempProduct);
 
         //Clear out attributes for configurable product
@@ -295,4 +300,26 @@ class Configurable extends Simple
         }
         return implode(",", $simpleSkus);
     }
+
+    /**
+     * Output as Array
+     * Ref: config header row.
+     */
+    public function outputAsArray()
+    {
+        /**
+         * @var array Parent Array
+         */
+        $base_array = parent::outputAsArray();
+
+        /**
+         * Set additional elements.
+         */
+        $base_array["configurable_attributes"] = $this->getConfigurableAttributes();
+        $base_array["simple_skus"] = $this->getSimpleSkus();
+        $base_array["type"] = "configurable";
+
+        return $base_array;
+    }
+
 }

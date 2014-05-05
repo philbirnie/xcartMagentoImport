@@ -15,6 +15,7 @@ class Simple
     public $tax_class_id;
     public $attribute_set;
     public $type;
+    public $categories;
     public $visibility;
     public $short_description;
     public $description;
@@ -40,8 +41,10 @@ class Simple
         $simple->setPrice($array['msrp'], $array['price']);
         $simple->setIsInStock($array['visibility']);
         $simple->setTaxClassId($array['free_tax']);
-        $simple->setAttributeSet($array['type']);
+        $simple->setAttributeSet($array['type']);;
         $simple->setGender($array['gender']);
+        $simple->setCategories($array['type']);
+
         //Because color is actually in the extra_info table and could also be a config attribute, we need to add this to the
         //attributes differently
         if ($array['color']) {
@@ -131,11 +134,12 @@ class Simple
      */
     protected function setTaxClassId($value)
     {
-        $tax_class_id = "Taxable Goods";
-
         switch ($value) {
             case "Y":
-                $tax_class_id = "None";
+                $tax_class_id = 0;
+                break;
+            default:
+                $tax_class_id = 2;
         }
         $this->tax_class_id = $tax_class_id;
     }
@@ -170,6 +174,63 @@ class Simple
     }
 
     /**
+     * @param $value string Set Base Category
+     *
+     * @return string Base Category String
+     */
+    protected function setCategories($value)
+    {
+        switch ($value) {
+            case "Shoes":
+                $category_string = "Shoes/Footwear";
+                break;
+            case "Accessory":
+            case "Other":
+                $category_string = "Accessories";
+                break;
+            case "Coats":
+            case "Jackets":
+            case "Outerwear":
+                $category_string = "Apparel/Coats";
+                break;
+            case "Jeans":
+            case "Pants":
+            case "Shorts":
+                $category_string = "Apparel/Jeans, Pants & Shorts";
+                break;
+            case "Shirts":
+            case "Tee":
+            case "Tees":
+            case "Tee\\nShirts":
+            case "Tanks":
+                $category_string = "Apparel/Shirts, Tees & Tanks";
+                break;
+            case "Jewelry":
+                $category_string = "Accessories/Jewelry";
+                break;
+            case "Watches":
+                $category_string = "Accessories/Watches";
+                break;
+            case "Sweatshirts":
+            case "Sweaters\\nSweatshirts":
+            case "Sweaters":
+                $category_string = "Apparel/Sweatshirts, Hoodies & Sweaters";
+                break;
+            case "Socks":
+                $category_string = "Accessories/Socks";
+                break;
+            case "Hats":
+                $category_string = "Accessories/Hats";
+                break;
+            default:
+                $category_string = "";
+        }
+
+
+        $this->categories = $category_string;
+    }
+
+    /**
      * @param $value string Gender Passed string
      */
     protected function setGender($value)
@@ -193,7 +254,7 @@ class Simple
 
     protected function setUrlKey($value)
     {
-        $this->url_key = strtolower(preg_replace("/ /", "-", $value));
+        $this->url_key = strtolower(str_replace(" ", "-", $value));
     }
 
     protected function convertConfigurableOption($value)
@@ -205,7 +266,7 @@ class Simple
             case "Hat Size":
             case "Shoe Size":
             case "Team":
-                $option = strtolower(preg_replace("/ /", "_", $value));
+                $option = strtolower(str_replace(" ", "_", $value));
                 break;
             case "Waist":
                 $option = "waist_size";
@@ -236,12 +297,12 @@ class Simple
 
     protected function stripEOLTags($string)
     {
-        return preg_replace("/<EOL>/", "", $string);
+        return str_replace("<EOL>", "", $string);
     }
 
     protected function convertLineBreakAttributes($value)
     {
-        return preg_replace("/\\\\n/", ",", $value);
+        return str_replace("\\n", ",", $value);
     }
 
     /**
@@ -251,41 +312,41 @@ class Simple
     public function outputAsArray()
     {
         return array(
-            "admin",
-            "default",
-            $this->sku,
-            $this->name,
-            $this->weight,
-            $this->special_price,
-            $this->price,
-            "", //TODO: Categories
-            $this->qty,
-            $this->is_in_stock,
-            $this->tax_class_id,
-            $this->attribute_set,
-            $this->type,
-            "", //Configurable Attributes
-            $this->visibility,
-            "", //TODO: Media Gallery
-            "", //TODO: Image
-            "", //TODO: Small Image
-            "", //TODO: Thumbnail
-            $this->short_description,
-            $this->description,
-            $this->gender,
-            "", //Feature
-            $this->brand,
-            "", //Is Featured
-            $this->getAttributeValue('shoe_size'),
-            "", //Color Family
-            $this->getAttributeValue('color_spec'),
-            $this->getAttributeValue('size'),
-            $this->getAttributeValue('inseam'),
-            $this->getAttributeValue('waist_size'),
-            $this->getAttributeValue('hat_size'),
-            $this->getAttributeValue('team'),
-            "", //Simple SKUS
-            "" //TODO: Related Products
+            "store"         => "admin",
+            "websites"      => "default",
+            "sku"           => $this->sku,
+            "name"          => $this->name,
+            "weight"        => $this->weight,
+            "special_price" => $this->special_price,
+            "price"         => $this->price,
+            "categories"    => $this->categories,
+            "qty"           => $this->qty,
+            "is_in_stock"   => $this->is_in_stock,
+            "tax_class_id"  => $this->tax_class_id,
+            "attribute_set" => $this->attribute_set,
+            "type"          => $this->type,
+            "configurable_attributes" => "", //Configurable Attributes
+            "visibility"    => $this->visibility,
+            "media_gallery" => "", //TODO: Media Gallery
+            "image"         => "", //TODO: Image
+            "small_image"   => "", //TODO: Small Image
+            "thumbnail"     => "", //TODO: Thumbnail
+            "short_description" => $this->short_description,
+            "description"   => $this->description,
+            "gender"        => $this->gender,
+            "feature"       => "", //Feature
+            "brand"         => $this->brand,
+            "is_featured"   => "", //Is Featured
+            "shoe_size"     => $this->getAttributeValue('shoe_size'),
+            "color_family"  => "", //Color Family
+            "color_spec"    => $this->getAttributeValue('color_spec'),
+            "size"          => $this->getAttributeValue('size'),
+            "inseam"        => $this->getAttributeValue('inseam'),
+            "waist_size"    => $this->getAttributeValue('waist_size'),
+            "hat_size"      => $this->getAttributeValue('hat_size'),
+            "team"          => $this->getAttributeValue('team'),
+            "simple_skus"   => "", //Simple SKUS
+            "related_products" => "" //TODO: Related Products
         );
     }
 }
