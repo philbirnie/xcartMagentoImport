@@ -2,6 +2,8 @@
 
 namespace Importgen\Products;
 
+use \Exception;
+
 class Simple
 {
     public $name;
@@ -12,6 +14,7 @@ class Simple
     public $price;
     public $qty;
     public $is_in_stock;
+    public $status;
     public $tax_class_id;
     public $attribute_set;
     public $type;
@@ -21,6 +24,7 @@ class Simple
     public $description;
     public $gender;
     public $brand;
+    public $color;
     public $attributes = array();
 
     public static function createFromArray($array)
@@ -35,21 +39,16 @@ class Simple
         $simple->description = $simple->stripEOLTags($array['long_description']);
         $simple->short_description = $simple->stripEOLTags($array['short_description']);
         $simple->brand = $array['brand'];
-        $simple->color_spec = $array['color'];
+        $simple->color = $simple->convertLineBreakAttributes($array['color']);
+        $simple->setIsInStock();
+        $simple->setStatus($array['visibility']);
 
         $simple->setUrlKey($array['url_key']);
         $simple->setPrice($array['msrp'], $array['price']);
-        $simple->setIsInStock($array['visibility']);
         $simple->setTaxClassId($array['free_tax']);
         $simple->setAttributeSet($array['type']);;
         $simple->setGender($array['gender']);
         $simple->setCategories($array['type']);
-
-        //Because color is actually in the extra_info table and could also be a config attribute, we need to add this to the
-        //attributes differently
-        if ($array['color']) {
-            $simple->attributes['color_spec'] = $simple->convertLineBreakAttributes($array['color']);
-        }
 
         if (isset($array['configurable_option'])) {
             $configurable_option = $simple->convertConfigurableOption($array['configurable_option']);
@@ -113,18 +112,38 @@ class Simple
         }
     }
 
+    protected function setStatus($visiblity) {
+        switch($visiblity) {
+            case "Y":
+                $enabled = "Enabled";
+                break;
+            default:
+                $enabled = "Disabled";
+        }
+        $this->status = $enabled;
+    }
+
+
     /**
-     * Sets Appropriate In Stock Value
-     * @param $value string Single character value of visibility
+     * Sets Appropriate In Stock Value Based quantity
+     * @param $qty integer Quantity of product
+     * @throws Exception If quantity is not set, exception will be thrown.
      */
-    protected function setIsInStock($value)
+    protected function setIsInStock($qty = null)
     {
         $is_in_stock = 0;
 
-        switch ($value) {
-            case "Y":
-                $is_in_stock = 1;
-                break;
+        if(is_null($qty) && !is_null($this->qty)) {
+            $qty = $this->qty;
+        } else {
+            throw new Exception("Quantity not set for product!  Cannot use autoload if quantity is not set");
+        }
+
+        /**
+         * If quantity is greater than 0 or type is configurable, this product is in stock
+         */
+        if($qty > 0 || $this->type == "configurable") {
+            $is_in_stock = 1;
         }
         $this->is_in_stock = $is_in_stock;
     }
@@ -160,6 +179,7 @@ class Simple
         switch ($value) {
             case "Shorts":
             case "Pants":
+            case "Jeans":
                 $attribute_set = "Pants";
                 break;
             case "Shoes":
@@ -259,7 +279,7 @@ class Simple
 
     protected function convertConfigurableOption($value)
     {
-        switch ($value) {
+        switch (trim($value)) {
             case "Size":
             case "Waist Size":
             case "Inseam":
@@ -312,40 +332,42 @@ class Simple
     public function outputAsArray()
     {
         return array(
-            "store"         => "admin",
-            "websites"      => "default",
-            "sku"           => $this->sku,
-            "name"          => $this->name,
-            "weight"        => $this->weight,
+            "store" => "admin",
+            "websites" => "default",
+            "sku" => $this->sku,
+            "name" => $this->name,
+            "url_key" => $this->url_key,
+            "weight" => $this->weight,
             "special_price" => $this->special_price,
-            "price"         => $this->price,
-            "categories"    => $this->categories,
-            "qty"           => $this->qty,
-            "is_in_stock"   => $this->is_in_stock,
-            "tax_class_id"  => $this->tax_class_id,
+            "price" => $this->price,
+            "categories" => $this->categories,
+            "status" => $this->status,
+            "qty" => $this->qty,
+            "is_in_stock" => $this->is_in_stock,
+            "tax_class_id" => $this->tax_class_id,
             "attribute_set" => $this->attribute_set,
-            "type"          => $this->type,
+            "type" => $this->type,
             "configurable_attributes" => "", //Configurable Attributes
-            "visibility"    => $this->visibility,
+            "visibility" => $this->visibility,
             "media_gallery" => "", //TODO: Media Gallery
-            "image"         => "", //TODO: Image
-            "small_image"   => "", //TODO: Small Image
-            "thumbnail"     => "", //TODO: Thumbnail
+            "image" => "", //TODO: Image
+            "small_image" => "", //TODO: Small Image
+            "thumbnail" => "", //TODO: Thumbnail
             "short_description" => $this->short_description,
-            "description"   => $this->description,
-            "gender"        => $this->gender,
-            "feature"       => "", //Feature
-            "brand"         => $this->brand,
-            "is_featured"   => "", //Is Featured
-            "shoe_size"     => $this->getAttributeValue('shoe_size'),
-            "color_family"  => "", //Color Family
-            "color_spec"    => $this->getAttributeValue('color_spec'),
-            "size"          => $this->getAttributeValue('size'),
-            "inseam"        => $this->getAttributeValue('inseam'),
-            "waist_size"    => $this->getAttributeValue('waist_size'),
-            "hat_size"      => $this->getAttributeValue('hat_size'),
-            "team"          => $this->getAttributeValue('team'),
-            "simple_skus"   => "", //Simple SKUS
+            "description" => $this->description,
+            "gender" => $this->gender,
+            "feature" => "", //Feature
+            "brand" => $this->brand,
+            "is_featured" => "", //Is Featured
+            "shoe_size" => $this->getAttributeValue('shoe_size'),
+            "color" => $this->color,
+            "color_spec" => $this->getAttributeValue('color_spec'),
+            "size" => $this->getAttributeValue('size'),
+            "inseam" => $this->getAttributeValue('inseam'),
+            "waist_size" => $this->getAttributeValue('waist_size'),
+            "hat_size" => $this->getAttributeValue('hat_size'),
+            "team" => $this->getAttributeValue('team'),
+            "simple_skus" => "", //Simple SKUS
             "related_products" => "" //TODO: Related Products
         );
     }

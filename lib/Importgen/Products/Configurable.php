@@ -2,6 +2,7 @@
 
 namespace Importgen\Products;
 
+use Composer\Config;
 use \Importgen\DB;
 use \Exception;
 
@@ -38,11 +39,33 @@ class Configurable extends Simple
      * Static Methods
      *--------------------------------------------------------------*/
 
+    /**
+     * Extend createFromArray from parent function
+     * @param $array
+     * @return Simple
+     */
+    public static function createFromArray($array)
+    {
+        $product = parent::createFromArray($array);
+
+        $configurable = new Configurable();
+
+        foreach (get_object_vars($product) as $key => $value) {
+            if($key != "type") {
+                $configurable->$key = $value;
+            }
+        }
+
+        $configurable->setIsInStock();
+        $configurable->attributes = array();
+
+        return $configurable;
+    }
+
+
     public static function generateConfigurableFromId($id)
     {
         $pdo = DB::get();
-
-        echo "<pre>================= Creating Configurable Product BY ID: ${id} =================</pre>";
 
         $configurable = new Configurable();
 
@@ -61,15 +84,13 @@ class Configurable extends Simple
          */
         foreach ($results as $row) {
             if (!$configurable->sku) {
-                $configurable->populateFromArray($row);
-                echo "<pre>* Configurable Product Created. (SKU: $configurable->sku)<pre>";
+                $configurable = self::createFromArray($row);
             }
             /**
              * @var $product \Importgen\Products\Simple
              */
             $product = Simple::createFromConfigurableArray($row);
             $configurable->addSimpleProduct($product);
-            echo "<pre>*Child Product Added. (SKU: $product->sku)</pre>";
         }
 
         /**
@@ -91,7 +112,6 @@ class Configurable extends Simple
          */
         $configurable = new Configurable();
 
-        echo "<pre>================= Creating Configurable Product BY STRING: ${string} =================</pre>";
 
         $query = self::$baseQuery . "
                     WHERE product_options.name LIKE :string_check";
@@ -107,28 +127,20 @@ class Configurable extends Simple
         foreach ($results as $row) {
 
             if (!$configurable->sku) {
-                $configurable->populateFromArray($row);
-                echo "<pre>* Configurable Product Created. (SKU: $configurable->sku)<pre>";
+                $configurable = self::createFromArray($row);
             }
             /**
              * @var $product \Importgen\Products\Simple
              */
             $product = Simple::createFromConfigurableArray($row);
             $configurable->addSimpleProduct($product);
-            echo "<pre>*Child Product Added. (SKU: $product->sku)</pre>";
         }
 
         $hasSiblings = $configurable->checkHasSiblings($results);
 
         //Reconcile Sibling Products
         if ($hasSiblings) {
-            echo("<pre>* This Product HAS SIBLINGS - Adding Color Specs to products.</pre>");
             $configurable->generateColorSpecProducts();
-        } else {
-            //All options are part of a single product
-            echo "<pre>* This Product Has No Siblings</pre>";
-
-            echo "<pre>* Generating Configurable Product<pre>";
         }
 
         /**
@@ -185,6 +197,8 @@ class Configurable extends Simple
              */
             $keys = array_keys($simpleProduct->attributes);
 
+            foreach($this->simpleProducts as $product) {}
+
             /**
              * @var $configurableAttributes string
              */
@@ -228,30 +242,6 @@ class Configurable extends Simple
             }
         }
         return $hasSiblings;
-    }
-
-    /**
-     * Helper function to populate fields in Configurable product
-     * @param $row array
-     * @return $this
-     */
-
-    private function populateFromArray($row)
-    {
-
-        $tempProduct = self::createFromArray($row);
-
-        foreach (get_object_vars($tempProduct) as $key => $value) {
-            $this->$key = $value;
-        }
-        //Clear from Memory
-        $tempProduct = null;
-        unset($tempProduct);
-
-        //Clear out attributes for configurable product
-        $this->attributes = array();
-
-        return $this;
     }
 
     /**
@@ -317,7 +307,6 @@ class Configurable extends Simple
          */
         $base_array["configurable_attributes"] = $this->getConfigurableAttributes();
         $base_array["simple_skus"] = $this->getSimpleSkus();
-        $base_array["type"] = "configurable";
 
         return $base_array;
     }
