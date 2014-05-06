@@ -34,7 +34,8 @@ class SimpleCollection
                         (SELECT NULL FROM product_options
                         WHERE product_options.product_id = product_main.product_id
                         )
-                    AND product_main.inventory > :inventory_min";
+                    AND product_main.inventory > :inventory_min
+                    AND product_main.visibility = :visibility_flag";
 
 
     //Build Collection
@@ -52,7 +53,7 @@ class SimpleCollection
         $query = self::$base_query;
 
         $stmt = $pdo->conn->prepare($query);;
-        $stmt->execute(array("inventory_min" => 0));
+        $stmt->execute(array("inventory_min" => 0, "visibility_flag" => 'Y'));
         /**
          * Build Simple Products
          */
