@@ -3,9 +3,11 @@
 namespace Importgen\Products;
 
 use \Exception;
+use \Importgen\DB;
 
 class Simple
 {
+    public $product_id;
     public $name;
     public $url_key;
     public $weight;
@@ -22,6 +24,9 @@ class Simple
     public $visibility;
     public $short_description;
     public $description;
+    public $media_gallery = array();
+    public $thumbnail;
+    public $image;
     public $gender;
     public $brand;
     public $color;
@@ -30,7 +35,7 @@ class Simple
     public static function createFromArray($array)
     {
         $simple = new Simple();
-
+        $simple->product_id = $array['product_id'];
         $simple->name = $array['name'];
         $simple->sku = $array['sku'];
         $simple->weight = $array['weight'];
@@ -54,6 +59,11 @@ class Simple
             $configurable_option = $simple->convertConfigurableOption($array['configurable_option']);
             $simple->addAttributeOption($configurable_option, $array['option']);
         }
+
+        /**
+         * Add images
+         */
+        $simple->addImages();
 
         return $simple;
     }
@@ -87,6 +97,46 @@ class Simple
     }
 
     /**
+     * Adds Images
+     */
+    public function addImages()
+    {
+        $base_string = '';
+        $thumb_string = '';
+
+        /**
+         * @var $pdo DB
+         */
+        $pdo = DB::get();
+
+        /**
+         * @var $query string  Set up query
+         */
+        $query = "SELECT image_src, thumbnail, label, type
+                  FROM product_images
+                  WHERE product_id = :product_id";
+
+        $stmt = $pdo->conn->prepare($query);
+        $stmt->execute(array("product_id" => $this->product_id));
+
+        /**
+         * Add Images to strings/this->media_gallery array if gallery.
+         */
+        while ($row = $stmt->fetch()) {
+            if ($row['type'] == "gallery") {
+                array_push($this->media_gallery, $row['image_src']);
+            } else {
+                if ($row['image_src'] != '') {
+                    $this->image = $row['image_src'];
+                }
+                if ($row['thumbnail'] != '') {
+                    $this->thumbnail = $row['thumbnail'];
+                }
+            }
+        }
+    }
+
+    /**
      * @param $configurable_option string Configurable option (e.g. waist_size)
      * @param $option string (e.g. XXL)
      */
@@ -96,6 +146,20 @@ class Simple
 
     }
 
+    public function getMediaGalleryString() {
+        $mediaGalleryString = '';
+
+        foreach($this->media_gallery as $image) {
+            $mediaGalleryString .= "/" . $image . ";";
+        }
+        /**
+         * If media_gallery is not empty, remove trailing semicolon.
+         */
+        if (strlen($mediaGalleryString) > 0) {
+            $mediaGalleryString = rtrim($mediaGalleryString, ";");
+        }
+        return $mediaGalleryString;
+    }
 
     /**
      * Sets Price and Special Price based upon msrp and price entered.
@@ -112,8 +176,9 @@ class Simple
         }
     }
 
-    protected function setStatus($visiblity) {
-        switch($visiblity) {
+    protected function setStatus($visibility)
+    {
+        switch ($visibility) {
             case "Y":
                 $enabled = "Enabled";
                 break;
@@ -133,7 +198,7 @@ class Simple
     {
         $is_in_stock = 0;
 
-        if(is_null($qty) && !is_null($this->qty)) {
+        if (is_null($qty) && !is_null($this->qty)) {
             $qty = $this->qty;
         } else {
             throw new Exception("Quantity not set for product!  Cannot use autoload if quantity is not set");
@@ -142,7 +207,7 @@ class Simple
         /**
          * If quantity is greater than 0 or type is configurable, this product is in stock
          */
-        if($qty > 0 || $this->type == "configurable") {
+        if ($qty > 0 || $this->type == "configurable") {
             $is_in_stock = 1;
         }
         $this->is_in_stock = $is_in_stock;
@@ -161,13 +226,6 @@ class Simple
                 $tax_class_id = 2;
         }
         $this->tax_class_id = $tax_class_id;
-    }
-
-    protected function setColorSpec($value)
-    {
-        if ($value != '') {
-            $this->color_spec = $value;
-        }
     }
 
     /**
@@ -349,10 +407,10 @@ class Simple
             "type" => $this->type,
             "configurable_attributes" => "", //Configurable Attributes
             "visibility" => $this->visibility,
-            "media_gallery" => "", //TODO: Media Gallery
-            "image" => "", //TODO: Image
-            "small_image" => "", //TODO: Small Image
-            "thumbnail" => "", //TODO: Thumbnail
+            "media_gallery" => $this->getMediaGalleryString(),
+            "image" => "+/" . $this->image,
+            "small_image" => "/" . $this->image,
+            "thumbnail" => "/" . $this->thumbnail,
             "short_description" => $this->short_description,
             "description" => $this->description,
             "gender" => $this->gender,

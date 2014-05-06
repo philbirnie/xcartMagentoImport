@@ -40,7 +40,7 @@ $writer->open($fullPath);
 /**
  * Write Header Row
  */
-$writer->writeRow($header_row);
+$writer->writeRow($product_header_row);
 
 /*---------------------------------------------------------------
  * Create and output Simple Products

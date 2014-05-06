@@ -10,7 +10,8 @@ class Configurable extends Simple
 {
 
     public static $baseQuery = "
-                    SELECT product_main.name,
+                    SELECT product_main.product_id,
+                    product_main.name,
                     product_main.url_key,
                     product_main.free_tax,
                     product_main.brand,
@@ -84,6 +85,9 @@ class Configurable extends Simple
          */
         foreach ($results as $row) {
             if (!$configurable->sku) {
+                /**
+                 * @var $configurable Configurable
+                 */
                 $configurable = self::createFromArray($row);
             }
             /**
@@ -164,6 +168,8 @@ class Configurable extends Simple
         $this->simpleProducts = null;
     }
 
+
+
     /**
      * Adds Simple Product to this configurable product
      * @param $simpleProduct \Importgen\Products\Simple
@@ -173,6 +179,40 @@ class Configurable extends Simple
     {
         array_push($this->simpleProducts, $simpleProduct);
         return $this;
+    }
+
+    public function getMediaGalleryString() {
+        $mediaGalleryString = '';
+
+        /**
+         * Append simple media galleries and base images
+         * @var $simple Simple
+         */
+        foreach($this->simpleProducts as $key=>$simple) {
+            if($simple->image) {
+                array_push($this->media_gallery, $simple->image);
+            }
+            $this->media_gallery = array_merge($this->media_gallery, $simple->media_gallery);
+
+            //Unset media from original simple product; it is no longer necessary.
+            $this->simpleProducts[$key]->media_gallery = array();
+            $this->simpleProducts[$key]->image = null;
+            $this->simpleProducts[$key]->thumbnail = null;
+        }
+
+        $this->media_gallery = array_unique($this->media_gallery);
+
+
+        foreach($this->media_gallery as $image) {
+            $mediaGalleryString .= "/" . $image . ";";
+        }
+        /**
+         * If media_gallery is not empty, remove trailing semicolon.
+         */
+        if (strlen($mediaGalleryString) > 0) {
+            $mediaGalleryString = rtrim($mediaGalleryString, ";");
+        }
+        return $mediaGalleryString;
     }
 
     /**

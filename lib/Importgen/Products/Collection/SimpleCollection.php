@@ -13,7 +13,8 @@ class SimpleCollection
     public $simpleProducts = array();
 
     public static $base_query = "
-                    SELECT product_main.name,
+                    SELECT product_main.product_id,
+                    product_main.name,
                     product_main.url_key,
                     product_main.free_tax,
                     product_main.brand,
@@ -52,8 +53,11 @@ class SimpleCollection
         $pdo = DB::get();
         $query = self::$base_query;
 
-        $stmt = $pdo->conn->prepare($query);;
+
+        $stmt = $pdo->conn->prepare($query);
+
         $stmt->execute(array("inventory_min" => 0, "visibility_flag" => 'Y'));
+
         /**
          * Build Simple Products
          */
