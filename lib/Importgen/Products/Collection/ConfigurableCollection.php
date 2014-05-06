@@ -22,14 +22,15 @@ class ConfigurableCollection
     private function setProductNames()
     {
         $pdo = DB::get();
-        $query = "SELECT name, product_id
+        $query = "SELECT product_options.name, product_options.product_id
                     FROM product_options
-                    WHERE inventory > :inventory_min
-                    GROUP BY name
-                    ORDER BY name";
+                    JOIN product_main ON product_options.product_id = product_main.product_id
+                    WHERE product_options.inventory > :inventory_min AND product_main.visibility = :visibility_flag
+                    GROUP BY product_options.name
+                    ORDER BY product_options.name";
 
         $stmt = $pdo->conn->prepare($query);
-        $stmt->execute(array("inventory_min" => 0));
+        $stmt->execute(array("inventory_min" => 0, "visibility_flag" => 'Y'));
 
         /**
          * Add product names to array;
@@ -53,10 +54,12 @@ class ConfigurableCollection
             if ($hyphenPosition = strrpos($value, "-")) {
                 $searchString = substr($value, 0, $hyphenPosition);
                 $configurableProduct = Configurable::generateConfigurableFromString($searchString);
+                //var_dump($configurableProduct);
             } else {
-                echo $value;
                 //We'll assume that this is its own product with no siblings.
                 $configurableProduct = Configurable::generateConfigurableFromId($key);
+                //var_dump($configurableProduct);
+                //die();
             }
             if (!is_null($configurableProduct)) {
                 array_push($this->configurableProducts, $configurableProduct);
