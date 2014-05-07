@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__.'/../vendor/autoload.php'; // load composer
-require_once __DIR__.'/config.php'; //Local Autoloader
+require_once __DIR__ . '/../vendor/autoload.php'; // load composer
+require_once __DIR__ . '/config.php'; //Local Autoloader
 
 use CSanquer\ColibriCsv\CsvWriter;
 use Importgen\Products\Collection\ConfigurableCollection;
@@ -31,8 +31,8 @@ use Importgen\Products\Collection\SimpleCollection;
  * @var $writer CSanquer\ColibriCsv\CsvWriter
  */
 $writer = new CsvWriter(array(
-   'delimiter' => ',',
-   'enclosing_mode' => 'minimal',
+    'delimiter' => ',',
+    'enclosing_mode' => 'minimal',
     'trim' => true
 ));
 $writer->open($fullPath);
@@ -78,12 +78,12 @@ $configurableCollection->generateConfigurableProducts();
 /**
  * @var $product Importgen\Products\Configurable
  */
-foreach($configurableCollection->configurableProducts as $product) {
+foreach ($configurableCollection->configurableProducts as $product) {
     /**
      * Write Simple Products to spreadsheet
      * @var $simple Importgen\Products\Simple
      */
-    foreach($product->simpleProducts as $simple) {
+    foreach ($product->simpleProducts as $simple) {
         $writer->writeRow($simple->outputAsArray());
     }
     /**
@@ -102,11 +102,11 @@ $writer->close();
 
 
 
-    <section id="main">
-        <header>
-            <h1>Export Complete</h1>
-        </header>
-        <p>Magento Product Import Located Here: <?php echo $fullPath; ?></p>
-    </section>
+<section id="main">
+    <header>
+        <h1>Export Complete</h1>
+    </header>
+    <p>Magento Product Import Located Here: <?php echo $fullPath; ?></p>
+</section>
 </body>
 </html>

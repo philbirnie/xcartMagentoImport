@@ -5,7 +5,6 @@
  */
 namespace Importgen\Products\Collection;
 
-use Importgen\DB;
 use Importgen\Products\Configurable;
 
 class ConfigurableCollection
@@ -21,7 +20,7 @@ class ConfigurableCollection
 
     private function setProductNames()
     {
-        $pdo = DB::get();
+        global $pdo;
         $query = "SELECT product_options.name, product_options.product_id
                     FROM product_options
                     JOIN product_main ON product_options.product_id = product_main.product_id

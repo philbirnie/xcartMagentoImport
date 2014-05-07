@@ -2,8 +2,9 @@
 
 namespace Importgen\Products;
 
+//include(__DIR__ . "../../../html/config.php");
+
 use \Exception;
-use \Importgen\DB;
 
 class Simple
 {
@@ -31,6 +32,7 @@ class Simple
     public $brand;
     public $color;
     public $attributes = array();
+    public $related;
 
     public static function createFromArray($array)
     {
@@ -101,13 +103,7 @@ class Simple
      */
     public function addImages()
     {
-        $base_string = '';
-        $thumb_string = '';
-
-        /**
-         * @var $pdo DB
-         */
-        $pdo = DB::get();
+        global $pdo;
 
         /**
          * @var $query string  Set up query
@@ -117,6 +113,7 @@ class Simple
                   WHERE product_id = :product_id";
 
         $stmt = $pdo->conn->prepare($query);
+
         $stmt->execute(array("product_id" => $this->product_id));
 
         /**
@@ -373,6 +370,7 @@ class Simple
         return $value;
     }
 
+
     protected function stripEOLTags($string)
     {
         return str_replace("<EOL>", "", $string);
@@ -381,6 +379,17 @@ class Simple
     protected function convertLineBreakAttributes($value)
     {
         return str_replace("\\n", ",", $value);
+    }
+
+    public function getLegacySku()
+    {
+        $legacySku = $this->sku;
+        $hyphenPosition = strrpos($this->sku, "-");
+
+        if($hyphenPosition !== false) {
+            $legacySku = substr($this->sku, 0, $hyphenPosition);
+        }
+        return $legacySku;
     }
 
     /**
@@ -425,8 +434,7 @@ class Simple
             "waist_size" => $this->getAttributeValue('waist_size'),
             "hat_size" => $this->getAttributeValue('hat_size'),
             "team" => $this->getAttributeValue('team'),
-            "simple_skus" => "", //Simple SKUS
-            "related_products" => "" //TODO: Related Products
+            "simple_skus" => "" //Simple SKUS
         );
     }
 }

@@ -4,7 +4,6 @@ namespace Importgen\Products;
 
 use Composer\Config;
 use \Importgen\DB;
-use \Exception;
 
 class Configurable extends Simple
 {
@@ -33,6 +32,19 @@ class Configurable extends Simple
                     FROM product_options
                     JOIN product_main ON product_options.product_id = product_main.product_id
                     JOIN product_extra_fields ON product_extra_fields.product_id = product_options.product_id";
+
+    public static $lightQuery = "
+                SELECT product_main.product_id,
+                    product_main.name,
+                    product_main.visibility,
+                    product_options.configurable_option,
+                    product_options.option,
+                    product_options.variant_sku,
+                    product_options.sku,
+                    product_options.variant_id,
+                    product_options.inventory
+                    FROM product_options
+                    JOIN product_main ON product_options.product_id = product_main.product_id";
 
     public $simpleProducts = array();
 
@@ -66,7 +78,7 @@ class Configurable extends Simple
 
     public static function generateConfigurableFromId($id)
     {
-        $pdo = DB::get();
+        global $pdo;
 
         $configurable = new Configurable();
 
@@ -109,7 +121,7 @@ class Configurable extends Simple
         /**
          * @var $pdo DB
          */
-        $pdo = DB::get();
+        global $pdo;
 
         /**
          * @var Configurable
@@ -154,6 +166,75 @@ class Configurable extends Simple
         return $configurable;
     }
 
+    public static function generateSiblingConfigurable($string)
+    {
+        /**
+         * @var $pdo DB
+         */
+        global $pdo;
+
+        /**
+         * @var Configurable
+         */
+        $configurable = new Configurable();
+
+
+        $query = self::$lightQuery . "
+                    WHERE product_options.name LIKE :string_check";
+
+
+        $stmt = $pdo->conn->prepare($query);
+        $stmt->execute(array("string_check" => $string . "%"));
+
+        $results = $stmt->fetchAll();
+
+        $hasSiblings = $configurable->checkHasSiblings($results);
+
+        if($hasSiblings) {
+
+            /**
+             * Create Base Configurable Product and Simple Products
+             */
+            foreach ($results as $row) {
+
+                $row['weight'] = 0;
+                $row['long_description'] = '';
+                $row['short_description'] = '';
+                $row['brand'] = '';
+                $row['color'] = '';
+                $row['url_key'] = '';
+                $row['msrp'] = 0;
+                $row['price'] = 0;
+                $row['free_tax'] = 'N';
+                $row['type'] = 'Default';
+                $row['gender'] = '';
+
+                if (!$configurable->sku) {
+                    $configurable = self::createFromArray($row);
+                }
+                /**
+                 * @var $product \Importgen\Products\Simple
+                 */
+                $product = Simple::createFromConfigurableArray($row);
+                $configurable->addSimpleProduct($product);
+            }
+
+            //Reconcile Sibling Products
+            if ($hasSiblings) {
+                $configurable->generateColorSpecProducts();
+            }
+
+            /**
+             * Merge Simple Products that have duplicate skus
+             */
+            $configurable->mergeSimpleProducts();
+        }
+        return $configurable;
+    }
+
+
+
+
     /*---------------------------------------------------------------
      * Constructor / Class Methods
      *--------------------------------------------------------------*/
@@ -188,16 +269,11 @@ class Configurable extends Simple
          * Append simple media galleries and base images
          * @var $simple Simple
          */
-        foreach($this->simpleProducts as $key=>$simple) {
+        foreach($this->simpleProducts as $simple) {
             if($simple->image) {
                 array_push($this->media_gallery, $simple->image);
             }
             $this->media_gallery = array_merge($this->media_gallery, $simple->media_gallery);
-
-            //Unset media from original simple product; it is no longer necessary.
-            $this->simpleProducts[$key]->media_gallery = array();
-            $this->simpleProducts[$key]->image = null;
-            $this->simpleProducts[$key]->thumbnail = null;
         }
 
         $this->media_gallery = array_unique($this->media_gallery);
@@ -236,8 +312,6 @@ class Configurable extends Simple
              * @var array
              */
             $keys = array_keys($simpleProduct->attributes);
-
-            foreach($this->simpleProducts as $product) {}
 
             /**
              * @var $configurableAttributes string
@@ -291,7 +365,14 @@ class Configurable extends Simple
     {
         $temporarySimpleArray = array();
 
+        /**
+         * Loop through all simple products
+         */
         foreach ($this->simpleProducts as $product) {
+            /**
+             * If product is already in the temporary array, just extract the attributes and add them to the array,
+             * if not create a new simple product.
+             */
             if (isset($temporarySimpleArray[$product->sku])) {
                 foreach ($product->attributes as $attributeKey => $attributeValue) {
                     $temporarySimpleArray[$product->sku]->attributes[$attributeKey] = $attributeValue;
