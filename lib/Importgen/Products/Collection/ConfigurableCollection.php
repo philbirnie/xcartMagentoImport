@@ -38,11 +38,15 @@ class ConfigurableCollection
             $this->configurableProductNames[$row['product_id']] = $row['name'];
         }
 
+        //Consolidate configurableProductNames
+        $this->consolidateConfigurableProductNames();
+
         return $this;
     }
 
     public function generateConfigurableProducts()
     {
+        reset($this->configurableProductNames);
         /**
          * Loop through configurable products and determine new variants
          */
@@ -65,4 +69,44 @@ class ConfigurableCollection
             }
         }
     }
+
+    /**
+     * Remove sibling duplicates.
+     */
+    private function consolidateConfigurableProductNames()
+    {
+        reset($this->configurableProductNames);
+        /**
+         * @var $configurableProductNames array Copy of configurableProductNames
+         */
+        $configurableProductNames = $this->configurableProductNames;
+
+        /**
+         * Loop through configurable product names
+         */
+        while(list($product_id, $name) = each($this->configurableProductNames)) {
+            /**
+             * Get string from last hyphen and check to see if we have other products
+             * that match; if so, get rid of them as they will be automatically captured
+             * in the siblings.
+             */
+            if($hyphenPosition = strrpos($name, "-")) {
+                $searchString = substr($name, 0, $hyphenPosition);
+                $matches = array();
+                foreach($configurableProductNames as $product_id => $value) {
+
+                    if(strpos($value, $searchString) !== false) {
+                        array_push($matches, $product_id);
+                    }
+                }
+                if(count($matches) > 1) {
+                    array_shift($matches);
+                    foreach($matches as $key) {
+                        unset($this->configurableProductNames[$key]);
+                    }
+                }
+            }
+        }
+    }
+
 }

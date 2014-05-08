@@ -157,6 +157,12 @@ class Configurable extends Simple
         //Reconcile Sibling Products
         if ($hasSiblings) {
             $configurable->generateColorSpecProducts();
+            /**
+             * Overwrite configurable name to be
+             * original string because we are adding colors.
+             */
+            $configurable->name = $string;
+
         }
 
         /**
