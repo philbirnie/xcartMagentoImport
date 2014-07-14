@@ -51,6 +51,10 @@ $writer->writeRow($product_header_row);
  */
 $simpleCollection = new SimpleCollection();
 $simpleCollection->buildCollection();
+
+
+die(var_dump($simpleCollection->simpleProducts));
+
 /**
  * @var $product \Importgen\Products\Simple
  */

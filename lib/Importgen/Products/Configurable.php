@@ -11,7 +11,6 @@ class Configurable extends Simple
     public static $baseQuery = "
                     SELECT product_main.product_id,
                     product_main.name,
-                    product_main.url_key,
                     product_main.free_tax,
                     product_main.brand,
                     product_main.msrp,
@@ -152,19 +151,6 @@ class Configurable extends Simple
             $configurable->addSimpleProduct($product);
         }
 
-        $hasSiblings = $configurable->checkHasSiblings($results);
-
-        //Reconcile Sibling Products
-        if ($hasSiblings) {
-            $configurable->generateColorSpecProducts();
-            /**
-             * Overwrite configurable name to be
-             * original string because we are adding colors.
-             */
-            $configurable->name = $string;
-
-        }
-
         /**
          * Merge Simple Products that have duplicate skus
          */
@@ -208,7 +194,6 @@ class Configurable extends Simple
                 $row['short_description'] = '';
                 $row['brand'] = '';
                 $row['color'] = '';
-                $row['url_key'] = '';
                 $row['msrp'] = 0;
                 $row['price'] = 0;
                 $row['free_tax'] = 'N';

@@ -15,7 +15,6 @@ class SimpleCollection
     public static $base_query = "
                     SELECT product_main.product_id,
                     product_main.name,
-                    product_main.url_key,
                     product_main.free_tax,
                     product_main.brand,
                     product_main.msrp,
@@ -35,7 +34,6 @@ class SimpleCollection
                         (SELECT NULL FROM product_options
                         WHERE product_options.product_id = product_main.product_id
                         )
-                    AND product_main.inventory > :inventory_min
                     AND product_main.visibility = :visibility_flag";
 
 
@@ -56,7 +54,7 @@ class SimpleCollection
 
         $stmt = $pdo->conn->prepare($query);
 
-        $stmt->execute(array("inventory_min" => 0, "visibility_flag" => 'Y'));
+        $stmt->execute(array("visibility_flag" => 'Y'));
 
         /**
          * Build Simple Products

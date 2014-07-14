@@ -10,7 +10,6 @@ class Simple
 {
     public $product_id;
     public $name;
-    public $url_key;
     public $weight;
     public $sku;
     public $special_price;
@@ -50,7 +49,6 @@ class Simple
         $simple->setIsInStock();
         $simple->setStatus($array['visibility']);
 
-        $simple->setUrlKey($array['url_key']);
         $simple->setPrice($array['msrp'], $array['price']);
         $simple->setTaxClassId($array['free_tax']);
         $simple->setAttributeSet($array['type']);;
@@ -84,11 +82,6 @@ class Simple
          * Modify Visibility
          */
         $simple->visibility = 1;
-
-        /**
-         * Modify URL
-         */
-        $simple->url_key = $simple->url_key . "-" . $array["variant_id"];
 
         return $simple;
     }
@@ -327,11 +320,6 @@ class Simple
         $this->gender = implode(",", $values);
     }
 
-    protected function setUrlKey($value)
-    {
-        $this->url_key = strtolower(str_replace(" ", "-", $value));
-    }
-
     protected function convertConfigurableOption($value)
     {
         switch (trim($value)) {
@@ -403,11 +391,10 @@ class Simple
             "websites" => "default",
             "sku" => $this->sku,
             "name" => $this->name,
-            "url_key" => $this->url_key,
             "weight" => $this->weight,
             "special_price" => $this->special_price,
             "price" => $this->price,
-            "categories" => $this->categories,
+            //"categories" => $this->categories,
             "status" => $this->status,
             "qty" => $this->qty,
             "is_in_stock" => $this->is_in_stock,

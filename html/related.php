@@ -50,7 +50,7 @@ $writer->writeRow($related_header_row);
  * @var $relatedCollection RelatedCollection
  */
 $relatedCollection = new RelatedCollection();
-$relatedCollection->cleanCollection();
+//$relatedCollection->cleanCollection();
 $relatedCollection->buildCollection();
 
 /**

@@ -38,9 +38,6 @@ class ConfigurableCollection
             $this->configurableProductNames[$row['product_id']] = $row['name'];
         }
 
-        //Consolidate configurableProductNames
-        $this->consolidateConfigurableProductNames();
-
         return $this;
     }
 
@@ -54,59 +51,10 @@ class ConfigurableCollection
             //If we have a hyphen position, we have sibling variants that need to be reconciled.
             //Okay to use this because we can pretty safely assume that the hyphen will never be 0
             $configurableProduct = null;
-            if ($hyphenPosition = strrpos($value, "-")) {
-                $searchString = substr($value, 0, $hyphenPosition);
-                $configurableProduct = Configurable::generateConfigurableFromString($searchString);
-                //var_dump($configurableProduct);
-            } else {
-                //We'll assume that this is its own product with no siblings.
-                $configurableProduct = Configurable::generateConfigurableFromId($key);
-                //var_dump($configurableProduct);
-                //die();
-            }
+            $configurableProduct = Configurable::generateConfigurableFromId($key);
             if (!is_null($configurableProduct)) {
                 array_push($this->configurableProducts, $configurableProduct);
             }
         }
     }
-
-    /**
-     * Remove sibling duplicates.
-     */
-    private function consolidateConfigurableProductNames()
-    {
-        reset($this->configurableProductNames);
-        /**
-         * @var $configurableProductNames array Copy of configurableProductNames
-         */
-        $configurableProductNames = $this->configurableProductNames;
-
-        /**
-         * Loop through configurable product names
-         */
-        while(list($product_id, $name) = each($this->configurableProductNames)) {
-            /**
-             * Get string from last hyphen and check to see if we have other products
-             * that match; if so, get rid of them as they will be automatically captured
-             * in the siblings.
-             */
-            if($hyphenPosition = strrpos($name, "-")) {
-                $searchString = substr($name, 0, $hyphenPosition);
-                $matches = array();
-                foreach($configurableProductNames as $product_id => $value) {
-
-                    if(strpos($value, $searchString) !== false) {
-                        array_push($matches, $product_id);
-                    }
-                }
-                if(count($matches) > 1) {
-                    array_shift($matches);
-                    foreach($matches as $key) {
-                        unset($this->configurableProductNames[$key]);
-                    }
-                }
-            }
-        }
-    }
-
 }
