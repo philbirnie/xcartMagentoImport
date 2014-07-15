@@ -10,6 +10,7 @@ class Simple
 {
     public $product_id;
     public $name;
+    public $subtitle;
     public $weight;
     public $sku;
     public $special_price;
@@ -38,6 +39,7 @@ class Simple
         $simple = new Simple();
         $simple->product_id = $array['product_id'];
         $simple->name = $array['name'];
+        $simple->updateSubtitle();
         $simple->sku = $array['sku'];
         $simple->weight = $array['weight'];
         $simple->visibility = 4;
@@ -66,6 +68,28 @@ class Simple
         $simple->addImages();
 
         return $simple;
+    }
+
+    /**
+     * Updates title and subtitle
+     */
+    private function updateSubtitle()
+    {
+        if($this->name && $position=strrpos($this->name,"-"))
+        {
+            /**
+             * @var $originalName string Store original name so that we can reference it when we create
+             * substrings.
+             */
+            $originalName = $this->name;
+
+            $this->name = substr($this->name, 0, $position);
+            $this->subtitle = substr($originalName, $position + 1);
+            //Strip trailing/leading spaces from strings.
+            $this->name = trim($this->name);
+            $this->subtitle = trim($this->subtitle);
+
+        }
     }
 
     public static function createFromConfigurableArray($array)
@@ -388,9 +412,10 @@ class Simple
     {
         return array(
             "store" => "admin",
-            "websites" => "default",
+            "websites" => "base",
             "sku" => $this->sku,
             "name" => $this->name,
+            "product_subtitle" => $this->subtitle,
             "weight" => $this->weight,
             "special_price" => $this->special_price,
             "price" => $this->price,
@@ -421,7 +446,8 @@ class Simple
             "waist_size" => $this->getAttributeValue('waist_size'),
             "hat_size" => $this->getAttributeValue('hat_size'),
             "team" => $this->getAttributeValue('team'),
-            "simple_skus" => "" //Simple SKUS
+            "simple_skus" => "", //Simple SKUS
+            "manage_stock" => 1
         );
     }
 }
